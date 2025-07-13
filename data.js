@@ -6,11 +6,14 @@ const defaultData = { blacklist: [], donationHistory: [] };
 
 async function loadData() {
     try {
+        console.log('🔄 กำลังโหลดข้อมูลจาก data.json...');
         const data = await fs.readFile(dataFile, 'utf8');
         try {
-            return JSON.parse(data);
+            const parsed = JSON.parse(data);
+            console.log('✅ โหลดข้อมูลสำเร็จ');
+            return parsed;
         } catch (parseError) {
-            console.warn('⚠️ ไฟล์ JSON เสียหาย กำลังสร้างใหม่...');
+            console.warn('⚠️ ไฟล์ JSON เสียหาย กำลังสร้างไฟล์ใหม่...');
             await saveData(defaultData);
             return defaultData;
         }
@@ -27,10 +30,14 @@ async function loadData() {
 
 async function saveData(data) {
     try {
+        console.log('💾 กำลังบันทึกข้อมูลลง data.json...');
         await fs.writeFile(dataFile, JSON.stringify(data, null, 2));
+        console.log('✅ บันทึกข้อมูลสำเร็จ');
     } catch (error) {
         console.error('❌ ข้อผิดพลาดในการบันทึกไฟล์:', error);
     }
 }
+
+// เครดิต: SteamThailand Bot by xeno (ริน)
 
 module.exports = { loadData, saveData };
