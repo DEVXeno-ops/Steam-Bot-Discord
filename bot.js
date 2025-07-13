@@ -1,3 +1,9 @@
+/**
+ * SteamThailand Bot - พัฒนาโดย xeno (ริน)
+ * ❌ ห้ามขาย หรือเผยแพร่ในเชิงพาณิชย์
+ * ✅ ใช้เพื่อการศึกษา / ส่วนตัวเท่านั้น
+ */
+
 const { Client, IntentsBitField, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
 const { registerCommands } = require('./commands');
 const { loadData, saveData } = require('./data');
@@ -28,6 +34,7 @@ setInterval(() => userBanCounts.clear(), 24 * 60 * 60 * 1000);
 
 client.once('ready', async () => {
     console.log(`เริ่มทำงาน: ${client.user.tag} (${new Date().toLocaleString('th-TH')})`);
+    console.log('📌 SteamThailand Bot โดย xeno (ริน) | ห้ามขาย | ใช้เพื่อศึกษา / ส่วนตัวเท่านั้น');
     try {
         const data = await loadData();
         blacklist = data.blacklist || [];
