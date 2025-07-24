@@ -112,75 +112,95 @@ client.on('interactionCreate', async interaction => {
             }
 
             else if (commandName === 'blacklist') {
-                const steamId = sanitizeInput(options.getString('steamid'));
-                const reason = sanitizeInput(options.getString('reason'));
-                if (!isValidSteamID64(steamId) || !reason) {
-                    console.log(`[BLACKLIST] ข้อมูลไม่ถูกต้องจากผู้ใช้ ${interaction.user.tag}`);
-                    return interaction.editReply({ content: '❌ โปรดระบุ SteamID64 และเหตุผลให้ถูกต้อง' });
+                const subcommand = options.getSubcommand?.() || null;
+
+                if (subcommand === 'add' || !subcommand) {
+                    // เพิ่ม blacklist
+                    const steamId = sanitizeInput(options.getString('steamid'));
+                    const reason = sanitizeInput(options.getString('reason'));
+                    if (!isValidSteamID64(steamId) || !reason) {
+                        return interaction.editReply({ content: '❌ โปรดระบุ SteamID64 และเหตุผลให้ถูกต้อง' });
+                    }
+
+                    const todayKey = `${userId}-${new Date().toDateString()}`;
+                    const banCount = (userBanCounts.get(todayKey) || 0) + 1;
+                    if (banCount > config.maxBansPerDay) {
+                        return interaction.editReply({ content: `❌ คุณแบนครบ ${config.maxBansPerDay} ครั้งแล้ววันนี้` });
+                    }
+                    userBanCounts.set(todayKey, banCount);
+
+                    const confirmButton = new ButtonBuilder()
+                        .setCustomId(`confirm_ban_${steamId}_${Buffer.from(reason).toString('base64')}`)
+                        .setLabel('ยืนยัน')
+                        .setStyle(ButtonStyle.Success);
+                    const cancelButton = new ButtonBuilder()
+                        .setCustomId('cancel_ban')
+                        .setLabel('ยกเลิก')
+                        .setStyle(ButtonStyle.Danger);
+
+                    return interaction.editReply({
+                        content: `คุณต้องการแบน SteamID **${steamId}** ด้วยเหตุผล: \`${reason}\` ใช่หรือไม่?`,
+                        components: [new ActionRowBuilder().addComponents(confirmButton, cancelButton)]
+                    });
                 }
 
-                const todayKey = `${userId}-${new Date().toDateString()}`;
-                const banCount = (userBanCounts.get(todayKey) || 0) + 1;
-                if (banCount > config.maxBansPerDay) {
-                    console.log(`[BLACKLIST] ผู้ใช้ ${interaction.user.tag} แบนเกินจำนวนสูงสุดต่อวัน`);
-                    return interaction.editReply({ content: `❌ คุณแบนครบ ${config.maxBansPerDay} ครั้งแล้ววันนี้` });
+                else if (subcommand === 'remove') {
+                    // ลบ blacklist
+                    const steamId = sanitizeInput(options.getString('steamid'));
+                    if (!isValidSteamID64(steamId)) {
+                        return interaction.editReply({ content: '❌ SteamID64 ไม่ถูกต้อง' });
+                    }
+                    const index = blacklist.findIndex(e => e.steamId === steamId);
+                    if (index === -1) {
+                        return interaction.editReply({ content: '❌ ไม่พบ SteamID นี้ในบัญชีดำ' });
+                    }
+
+                    const confirmButton = new ButtonBuilder()
+                        .setCustomId(`confirm_unban_${steamId}`)
+                        .setLabel('ยืนยันลบ')
+                        .setStyle(ButtonStyle.Success);
+                    const cancelButton = new ButtonBuilder()
+                        .setCustomId('cancel_unban')
+                        .setLabel('ยกเลิก')
+                        .setStyle(ButtonStyle.Danger);
+
+                    return interaction.editReply({
+                        content: `คุณต้องการลบ SteamID **${steamId}** ออกจากบัญชีดำ ใช่หรือไม่?`,
+                        components: [new ActionRowBuilder().addComponents(confirmButton, cancelButton)]
+                    });
                 }
-                userBanCounts.set(todayKey, banCount);
-
-                const confirmButton = new ButtonBuilder()
-                    .setCustomId(`confirm_ban_${steamId}_${Buffer.from(reason).toString('base64')}`)
-                    .setLabel('ยืนยัน')
-                    .setStyle(ButtonStyle.Success);
-                const cancelButton = new ButtonBuilder()
-                    .setCustomId('cancel_ban')
-                    .setLabel('ยกเลิก')
-                    .setStyle(ButtonStyle.Danger);
-
-                console.log(`[BLACKLIST] ผู้ใช้ ${interaction.user.tag} ขอแบน SteamID: ${steamId}`);
-
-                return interaction.editReply({
-                    content: `คุณต้องการแบน SteamID **${steamId}** ด้วยเหตุผล: \`${reason}\` ใช่หรือไม่?`,
-                    components: [new ActionRowBuilder().addComponents(confirmButton, cancelButton)]
-                });
             }
 
             else if (commandName === 'check') {
                 const steamId = sanitizeInput(options.getString('steamid'));
                 if (!isValidSteamID64(steamId)) {
-                    console.log(`[CHECK] SteamID64 ไม่ถูกต้องจากผู้ใช้ ${interaction.user.tag}`);
                     return interaction.editReply({ content: '❌ SteamID64 ต้องเป็นตัวเลข 17 หลัก' });
                 }
 
                 const found = blacklist.find(e => e.steamId === steamId);
                 if (!found) {
-                    console.log(`[CHECK] SteamID: ${steamId} ไม่อยู่ในบัญชีดำ ตรวจสอบโดย ${interaction.user.tag}`);
                     return interaction.editReply({ content: '✅ SteamID นี้ไม่อยู่ในบัญชีดำ' });
                 }
 
                 const embed = createEmbed('blacklist', 'success', { steamId: found.steamId, reason: found.reason });
-                console.log(`[CHECK] SteamID: ${steamId} พบในบัญชีดำ ตรวจสอบโดย ${interaction.user.tag}`);
                 return interaction.editReply({ embeds: [embed] });
             }
 
             else if (commandName === 'donate') {
                 if (Object.keys(config.tradeOfferLinks).length === 0) {
-                    console.log(`[DONATE] ยังไม่มีผู้รับบริจาคจากผู้ใช้ ${interaction.user.tag}`);
                     return interaction.editReply({ content: '❌ ยังไม่มีผู้รับบริจาค กรุณาใช้คำสั่ง /setup donate ก่อน' });
                 }
                 const { embed, row } = createDonationGUI(config.tradeOfferLinks);
-                console.log(`[DONATE] ผู้ใช้ ${interaction.user.tag} เรียกดูลิงก์บริจาค`);
                 return interaction.editReply({ embeds: [embed], components: [row] });
             }
 
             else if (commandName === 'history') {
                 const embed = createEmbed('history', 'success', { blacklist });
-                console.log(`[HISTORY] ผู้ใช้ ${interaction.user.tag} เรียกดูประวัติ blacklist`);
                 return interaction.editReply({ embeds: [embed] });
             }
 
             else if (commandName === 'donationhistory') {
                 const embed = createEmbed('donationhistory', 'success', { donationHistory });
-                console.log(`[DONATION HISTORY] ผู้ใช้ ${interaction.user.tag} เรียกดูประวัติการบริจาค`);
                 return interaction.editReply({ embeds: [embed] });
             }
         }
@@ -190,7 +210,6 @@ client.on('interactionCreate', async interaction => {
             const recipient = interaction.values[0];
             const data = config.tradeOfferLinks[recipient];
             if (!data) {
-                console.log(`[DONATE SELECT] เลือกผู้รับบริจาคไม่ถูกต้องจากผู้ใช้ ${interaction.user.tag}`);
                 return interaction.editReply({ content: '❌ เลือกผู้รับบริจาคไม่ถูกต้อง', components: [] });
             }
 
@@ -203,8 +222,6 @@ client.on('interactionCreate', async interaction => {
 
             donationHistory.push({ userId: userId, username: interaction.user.tag, recipient, timestamp: Date.now() });
             await saveData({ blacklist, donationHistory });
-
-            console.log(`[DONATE SELECT] ผู้ใช้ ${interaction.user.tag} เลือกบริจาคให้ ${recipient}`);
         }
 
         else if (interaction.isButton()) {
@@ -213,14 +230,12 @@ client.on('interactionCreate', async interaction => {
             if (interaction.customId.startsWith('confirm_ban_')) {
                 const parts = interaction.customId.split('_');
                 if (parts.length < 4) {
-                    console.log(`[BUTTON] ข้อมูลแบนไม่ถูกต้องจากผู้ใช้ ${interaction.user.tag}`);
                     return interaction.editReply({ content: '❌ ข้อมูลแบนไม่ถูกต้อง', components: [] });
                 }
                 const steamId = parts[2];
                 const reason = Buffer.from(parts.slice(3).join('_'), 'base64').toString('utf-8');
 
                 if (blacklist.some(e => e.steamId === steamId)) {
-                    console.log(`[BUTTON] SteamID: ${steamId} ถูกแบนไปแล้ว`);
                     return interaction.editReply({ content: '❌ SteamID นี้ถูกแบนไปแล้ว', components: [] });
                 }
 
@@ -231,23 +246,40 @@ client.on('interactionCreate', async interaction => {
                 await logToChannel(client, config.logChannelId, embed);
                 await interaction.user.send({ embeds: [embed] }).catch(() => console.log('[DM ERROR] ไม่สามารถส่ง DM'));
 
-                console.log(`[BUTTON] เพิ่ม SteamID: ${steamId} ในบัญชีดำโดย ${interaction.user.tag}`);
-
                 return interaction.editReply({ content: '✅ เพิ่มในบัญชีดำสำเร็จ!', components: [] });
             }
 
-            if (interaction.customId === 'cancel_ban') {
-                console.log(`[BUTTON] ผู้ใช้ ${interaction.user.tag} ยกเลิกการแบน`);
+            else if (interaction.customId === 'cancel_ban') {
                 return interaction.editReply({ content: '❌ ยกเลิกการแบน', components: [] });
+            }
+
+            else if (interaction.customId.startsWith('confirm_unban_')) {
+                const steamId = interaction.customId.replace('confirm_unban_', '');
+                const index = blacklist.findIndex(e => e.steamId === steamId);
+                if (index === -1) {
+                    return interaction.editReply({ content: '❌ ไม่พบ SteamID นี้ในบัญชีดำ', components: [] });
+                }
+                blacklist.splice(index, 1);
+                await saveData({ blacklist, donationHistory });
+
+                const embed = createEmbed('unban', 'success', { steamId });
+                await logToChannel(client, config.logChannelId, embed);
+                await interaction.user.send({ embeds: [embed] }).catch(() => console.log('[DM ERROR] ไม่สามารถส่ง DM'));
+
+                return interaction.editReply({ content: `✅ ลบ SteamID ${steamId} จากบัญชีดำสำเร็จ!`, components: [] });
+            }
+
+            else if (interaction.customId === 'cancel_unban') {
+                return interaction.editReply({ content: '❌ ยกเลิกการลบบัญชีดำ', components: [] });
             }
         }
 
     } catch (error) {
         console.error('[ERROR] ข้อผิดพลาดใน interactionCreate:', error);
         if (interaction.deferred || interaction.replied) {
-            await interaction.editReply({ content: '❌ เกิดข้อผิดพลาด โปรดลองอีกครั้ง' }).catch(() => {});
+            await interaction.editReply({ content: '❌ เกิดข้อผิดพลาด โปรดลองอีกครั้ง' }).catch(() => { });
         } else {
-            await interaction.reply({ content: '❌ เกิดข้อผิดพลาด โปรดลองอีกครั้ง', ephemeral: true }).catch(() => {});
+            await interaction.reply({ content: '❌ เกิดข้อผิดพลาด โปรดลองอีกครั้ง', ephemeral: true }).catch(() => { });
         }
     }
 });

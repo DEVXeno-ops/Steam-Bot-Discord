@@ -32,19 +32,32 @@ async function registerCommands(client) {
                         )
                 ),
 
-            // ⚠️ /blacklist
+            // ⚠️ /blacklist แบบ subcommand add, remove
             new SlashCommandBuilder()
                 .setName('blacklist')
-                .setDescription('เพิ่มในบัญชีดำ')
-                .addStringOption(opt =>
-                    opt.setName('steamid')
-                        .setDescription('SteamID64 ของผู้เล่น')
-                        .setRequired(true)
+                .setDescription('จัดการบัญชีดำ SteamID')
+                .addSubcommand(sub =>
+                    sub.setName('add')
+                        .setDescription('เพิ่ม SteamID ในบัญชีดำ')
+                        .addStringOption(opt =>
+                            opt.setName('steamid')
+                                .setDescription('SteamID64 ของผู้เล่น')
+                                .setRequired(true)
+                        )
+                        .addStringOption(opt =>
+                            opt.setName('reason')
+                                .setDescription('เหตุผลในการแบน')
+                                .setRequired(true)
+                        )
                 )
-                .addStringOption(opt =>
-                    opt.setName('reason')
-                        .setDescription('เหตุผลในการแบน')
-                        .setRequired(true)
+                .addSubcommand(sub =>
+                    sub.setName('remove')
+                        .setDescription('ลบ SteamID จากบัญชีดำ')
+                        .addStringOption(opt =>
+                            opt.setName('steamid')
+                                .setDescription('SteamID64 ของผู้เล่น')
+                                .setRequired(true)
+                        )
                 ),
 
             // 🔍 /check
@@ -79,7 +92,5 @@ async function registerCommands(client) {
         console.error('❌ พบข้อผิดพลาดในการลงทะเบียนคำสั่ง:', error);
     }
 }
-
-// เครดิต: SteamThailand Bot by xeno (ริน)
 
 module.exports = { registerCommands };

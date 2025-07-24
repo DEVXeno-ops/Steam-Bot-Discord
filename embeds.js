@@ -3,11 +3,11 @@ const { EmbedBuilder, StringSelectMenuBuilder, ActionRowBuilder } = require('dis
 function createEmbed(type, status, options = {}) {
     try {
         const {
-            steamId,
-            reason,
-            recipient,
-            link,
-            userTag,
+            steamId = 'ไม่ระบุ',
+            reason = 'ไม่ระบุ',
+            recipient = 'ไม่ระบุ',
+            link = '',
+            userTag = 'ไม่ทราบชื่อ',
             blacklist = [],
             donationHistory = [],
             emoji = '🎁',
@@ -24,31 +24,31 @@ function createEmbed(type, status, options = {}) {
                 if (status === 'success') {
                     embed
                         .setDescription(`เพิ่ม **${steamId}** เข้าบัญชีดำสำเร็จ`)
-                        .addFields(
-                            { name: 'Steam ID', value: steamId },
-                            { name: 'เหตุผล', value: reason || 'ไม่ระบุ' }
-                        );
+                        .addFields([
+                            { name: 'Steam ID', value: steamId, inline: true },
+                            { name: 'เหตุผล', value: reason, inline: true },
+                        ]);
                 } else {
                     embed
                         .setDescription(`❌ ไม่สามารถแบน **${steamId}** ได้`)
-                        .addFields({ name: 'ข้อผิดพลาด', value: reason || 'ไม่ระบุ' });
+                        .addFields([{ name: 'ข้อผิดพลาด', value: reason }]);
                 }
                 break;
 
             case 'donate':
                 embed
                     .setColor('#55FF55')
-                    .setTitle(`${emoji} บริจาคให้ ${recipient || 'ไม่ระบุ'}!`)
+                    .setTitle(`${emoji} บริจาคให้ ${recipient}!`)
                     .setThumbnail('https://i.imgur.com/2z3Y4kF.png')
                     .setDescription(`ส่งไอเทม: [คลิกเพื่อบริจาค](${link})`)
-                    .addFields({ name: 'ผู้รับ', value: recipient || 'ไม่ระบุ' });
+                    .addFields([{ name: 'ผู้รับ', value: recipient }]);
                 break;
 
             case 'donationlog':
                 embed
                     .setColor('#55FF55')
                     .setTitle('📝 บันทึกการบริจาค')
-                    .setDescription(`${userTag || 'ผู้ใช้ไม่ทราบชื่อ'} ขอรับลิงก์บริจาคให้ **${recipient || 'ไม่ระบุ'}**`);
+                    .setDescription(`${userTag} ขอรับลิงก์บริจาคให้ **${recipient}**`);
                 break;
 
             case 'history':
@@ -58,7 +58,9 @@ function createEmbed(type, status, options = {}) {
                     .setDescription(
                         blacklist.length
                             ? blacklist
-                                .map(e => `SteamID: **${e.steamId}**\nเหตุผล: ${e.reason}\nเวลา: ${new Date(e.timestamp).toLocaleString('th-TH')}`)
+                                .map(e =>
+                                    `• SteamID: **${e.steamId}**\n  เหตุผล: ${e.reason}\n  เวลา: ${new Date(e.timestamp).toLocaleString('th-TH')}`
+                                )
                                 .join('\n\n')
                             : 'ไม่มีรายการในบัญชีดำ'
                     );
@@ -71,7 +73,9 @@ function createEmbed(type, status, options = {}) {
                     .setDescription(
                         donationHistory.length
                             ? donationHistory
-                                .map(e => `ผู้ใช้: **${e.username}**\nผู้รับ: ${e.recipient}\nเวลา: ${new Date(e.timestamp).toLocaleString('th-TH')}`)
+                                .map(e =>
+                                    `• ผู้ใช้: **${e.username}**\n  ผู้รับ: ${e.recipient}\n  เวลา: ${new Date(e.timestamp).toLocaleString('th-TH')}`
+                                )
                                 .join('\n\n')
                             : 'ไม่มีประวัติการบริจาค'
                     );
@@ -102,7 +106,6 @@ function createEmbed(type, status, options = {}) {
 
     } catch (error) {
         console.error(`❌ ข้อผิดพลาดในการสร้าง Embed ประเภท "${type}":`, error);
-        // ส่ง embed แจ้งข้อผิดพลาดเบื้องต้นแทน
         return new EmbedBuilder()
             .setColor('#FF5555')
             .setTitle('❌ เกิดข้อผิดพลาดในการสร้าง Embed')
@@ -133,12 +136,12 @@ function createDonationGUI(tradeOfferLinks = {}) {
                 .setFooter({
                     text: 'กรุณาเลือกภายใน 30 วินาที',
                     iconURL: 'https://i.imgur.com/2z3Y4kF.png',
-                }),
+                })
+                .setTimestamp(),
             row: new ActionRowBuilder().addComponents(menu),
         };
     } catch (error) {
         console.error('❌ ข้อผิดพลาดในการสร้าง Donation GUI:', error);
-        // คืนค่า default เฉพาะ embed แจ้งข้อผิดพลาด
         return {
             embed: new EmbedBuilder()
                 .setColor('#FF5555')
@@ -148,7 +151,5 @@ function createDonationGUI(tradeOfferLinks = {}) {
         };
     }
 }
-
-// เครดิต: SteamThailand Bot by xeno (ริน)
 
 module.exports = { createEmbed, createDonationGUI };

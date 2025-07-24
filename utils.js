@@ -1,5 +1,7 @@
 function isValidSteamID64(steamId) {
     try {
+        if (typeof steamId !== 'string') return false;
+        // SteamID64 ต้องเป็นตัวเลข 17 หลัก และขึ้นต้นด้วย 7656
         const result = /^\d{17}$/.test(steamId) && steamId.startsWith('7656');
         console.log(`✅ ตรวจสอบ SteamID64: ${steamId} ผลลัพธ์: ${result}`);
         return result;
@@ -11,6 +13,8 @@ function isValidSteamID64(steamId) {
 
 function isValidTradeLink(link) {
     try {
+        if (typeof link !== 'string') return false;
+        // ตรวจสอบลิงก์ trade offer แบบมาตรฐาน steamcommunity.com/tradeoffer/new/?partner=...&token=...
         const regex = /^https:\/\/steamcommunity\.com\/tradeoffer\/new\/\?partner=\d+&token=[\w-]+$/i;
         const result = regex.test(link);
         console.log(`✅ ตรวจสอบ Trade Link: ${link} ผลลัพธ์: ${result}`);
@@ -24,7 +28,7 @@ function isValidTradeLink(link) {
 function sanitizeInput(input) {
     try {
         if (!input || typeof input !== 'string') return '';
-        // ลบ HTML tags และ trim ช่องว่าง
+        // ลบอักขระที่อาจทำให้เกิด XSS หรือปัญหา input อื่น ๆ และ trim
         const sanitized = input.replace(/[<>&"'`]/g, '').trim();
         console.log(`✅ sanitizeInput: "${input}" → "${sanitized}"`);
         return sanitized;
@@ -37,7 +41,7 @@ function sanitizeInput(input) {
 async function logToChannel(client, channelId, embed) {
     try {
         const channel = await client.channels.fetch(channelId);
-        if (!channel || !channel.isTextBased()) {
+        if (!channel || !channel.isText()) {
             console.warn(`⚠️ ไม่พบช่องหรือไม่สามารถส่งข้อความใน: ${channelId}`);
             return;
         }
