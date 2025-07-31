@@ -2,7 +2,7 @@ function isValidSteamID64(steamId) {
     try {
         if (typeof steamId !== 'string') return false;
         // SteamID64 ต้องเป็นตัวเลข 17 หลัก และขึ้นต้นด้วย 7656
-        const result = /^\d{17}$/.test(steamId) && steamId.startsWith('7656');
+        const result = /^7656\d{13}$/.test(steamId);
         console.log(`✅ ตรวจสอบ SteamID64: ${steamId} ผลลัพธ์: ${result}`);
         return result;
     } catch (error) {
@@ -41,7 +41,7 @@ function sanitizeInput(input) {
 async function logToChannel(client, channelId, embed) {
     try {
         const channel = await client.channels.fetch(channelId);
-        if (!channel || !channel.isText()) {
+        if (!channel || !channel.send) {
             console.warn(`⚠️ ไม่พบช่องหรือไม่สามารถส่งข้อความใน: ${channelId}`);
             return;
         }
@@ -52,8 +52,10 @@ async function logToChannel(client, channelId, embed) {
         // fallback log
         try {
             const fallback = await client.channels.fetch(channelId);
-            await fallback.send('❌ ไม่สามารถส่ง Embed ได้');
-            console.log(`✅ ส่ง fallback log ไปยังช่อง ${channelId} สำเร็จ`);
+            if (fallback && fallback.send) {
+                await fallback.send('❌ ไม่สามารถส่ง Embed ได้');
+                console.log(`✅ ส่ง fallback log ไปยังช่อง ${channelId} สำเร็จ`);
+            }
         } catch (e) {
             console.error('❌ ไม่สามารถ fallback log ได้:', e);
         }
