@@ -1,13 +1,16 @@
+// commands/registerCommands.js
 const { SlashCommandBuilder } = require('discord.js');
 
 async function registerCommands(client) {
     try {
         console.log('🔄 เริ่มลงทะเบียนคำสั่ง Slash ของ SteamThailand Bot โดย xeno (ริน)...');
+
         const commands = [
             // 🔧 /setup donate & removedonate
             new SlashCommandBuilder()
                 .setName('setup')
                 .setDescription('ตั้งค่าการบริจาค (เฉพาะแอดมิน)')
+                .setDMPermission(false)
                 .addSubcommand(sub =>
                     sub.setName('donate')
                         .setDescription('เพิ่มผู้รับบริจาค')
@@ -32,10 +35,11 @@ async function registerCommands(client) {
                         )
                 ),
 
-            // ⚠️ /blacklist แบบ subcommand add, remove
+            // ⚠️ /blacklist
             new SlashCommandBuilder()
                 .setName('blacklist')
                 .setDescription('จัดการบัญชีดำ SteamID')
+                .setDMPermission(false)
                 .addSubcommand(sub =>
                     sub.setName('add')
                         .setDescription('เพิ่ม SteamID ในบัญชีดำ')
@@ -64,6 +68,7 @@ async function registerCommands(client) {
             new SlashCommandBuilder()
                 .setName('check')
                 .setDescription('ตรวจสอบบัญชีดำ')
+                .setDMPermission(false)
                 .addStringOption(opt =>
                     opt.setName('steamid')
                         .setDescription('SteamID64 ของผู้เล่น')
@@ -73,20 +78,25 @@ async function registerCommands(client) {
             // 💸 /donate
             new SlashCommandBuilder()
                 .setName('donate')
-                .setDescription('ขอลิงก์บริจาค'),
+                .setDescription('ขอลิงก์บริจาค')
+                .setDMPermission(false),
 
             // 📜 /history
             new SlashCommandBuilder()
                 .setName('history')
-                .setDescription('ดูประวัติบัญชีดำทั้งหมด'),
+                .setDescription('ดูประวัติบัญชีดำทั้งหมด')
+                .setDMPermission(false),
 
             // 📦 /donationhistory
             new SlashCommandBuilder()
                 .setName('donationhistory')
                 .setDescription('ดูประวัติการบริจาคทั้งหมด')
+                .setDMPermission(false)
         ];
 
-        await client.application.commands.set(commands.map(cmd => cmd.toJSON()));
+        // ลงทะเบียนคำสั่ง
+        await client.application.commands.set(commands.map(c => c.toJSON()));
+
         console.log('✅ ลงทะเบียนคำสั่ง Slash สำเร็จแล้ว');
     } catch (error) {
         console.error('❌ พบข้อผิดพลาดในการลงทะเบียนคำสั่ง:', error);
